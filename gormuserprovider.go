@@ -75,15 +75,15 @@ func (p *GormUserProvider) ValidateCredentials(ctx context.Context, user auth.Au
 	return p.Hasher.Check(password.(string), user.GetAuthPassword())
 }
 
-func (p *GormUserProvider) RehashPasswordIfRequired(ctx context.Context, user auth.Authenticatable, credentials map[string]any, force bool) error {
+func (p *GormUserProvider) RehashPasswordIfRequired(ctx context.Context, user auth.Authenticatable, credentials map[string]any, force bool) (newhash string, err error) {
 	if !p.Hasher.NeedsRehash(user.GetAuthPassword()) && !force {
-		return nil
+		return "", nil
 	}
 
 	hash, err := p.Hasher.Make(credentials[user.GetAuthPasswordName()].(string))
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return p.DB.Model(user).Update(user.GetAuthPasswordName(), hash).Error
+	return hash, p.DB.Model(user).Update(user.GetAuthPasswordName(), hash).Error
 }
